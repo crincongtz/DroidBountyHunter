@@ -22,6 +22,7 @@
         android:minHeight="30dp"
         android:minWidth="100dp"
         android:text="@string/button_capture"
+        android:onClick="OnCaptureClick"
         android:textAppearance="?android:attr/textAppearanceSmallInverse" />
 
     <Button
@@ -31,6 +32,7 @@
         android:minHeight="30dp"
         android:minWidth="100dp"
         android:text="@string/button_delete"
+        android:onClick="OnDeleteClick"
         android:textAppearance="?android:attr/textAppearanceSmallInverse" />
 
 </LinearLayout>
