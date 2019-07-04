@@ -16,17 +16,19 @@ public class DatabaseBountyHunter {
     /** ------------------- Nombre de Base de Datos --------------------------**/
     private static final String DataBaseName = "DroidBountyHunterDataBase";
     /** ------------------ Versión de Base de Datos --------------------------**/
-    private static final int version = 1;
+    private static final int version = 2;
     /** ---------------------- Tablas y Campos -------------------------------**/
     private static final String TABLE_NAME = "fugitives";
     private static final String COLUMN_NAME_ID = "id";
     private static final String COLUMN_NAME_NAME = "name";
     private static final String COLUMN_NAME_STATUS = "status";
+    private static final String COLUMN_NAME_PHOTO = "photo";
  /** ------------------- Declaración de Tablas ----------------------------**/
     private static final String TFugitives = "CREATE TABLE " + TABLE_NAME + " (" +
             COLUMN_NAME_ID + " INTEGER PRIMARY KEY NOT NULL, " +
             COLUMN_NAME_NAME + " TEXT NOT NULL, " +
             COLUMN_NAME_STATUS + " INTEGER, " +
+            COLUMN_NAME_PHOTO + " TEXT, " +
             "UNIQUE (" + COLUMN_NAME_NAME + ") ON CONFLICT REPLACE);";
     /** ---------------------- Variables y Helpers ---------------------------**/
     private DBHelper helper;
@@ -69,7 +71,9 @@ public class DatabaseBountyHunter {
                         .getColumnIndex(COLUMN_NAME_NAME));
                 String status = dataCursor.getString(
                         dataCursor.getColumnIndex(COLUMN_NAME_STATUS));
-                fugitives.add(new Fugitive(id, name, status));
+                String photo = dataCursor.getString(dataCursor
+                        .getColumnIndex(COLUMN_NAME_PHOTO));
+                fugitives.add(new Fugitive(id, name, status, photo));
             }
         }
         close();
@@ -81,8 +85,9 @@ public class DatabaseBountyHunter {
         ContentValues values = new ContentValues();
         values.put(COLUMN_NAME_NAME, fugitive.getName());
         values.put(COLUMN_NAME_STATUS, fugitive.getStatus());
+        values.put(COLUMN_NAME_PHOTO, fugitive.getPhoto());
         open();
-        database.insert(TABLE_NAME,null,values);
+        database.insert(TABLE_NAME,null, values);
         close();
     }
 
@@ -91,6 +96,7 @@ public class DatabaseBountyHunter {
         ContentValues values = new ContentValues();
         values.put(COLUMN_NAME_NAME, fugitive.getName());
         values.put(COLUMN_NAME_STATUS, fugitive.getStatus());
+        values.put(COLUMN_NAME_PHOTO, fugitive.getPhoto());
         database.update(TABLE_NAME,values,COLUMN_NAME_NAME + "=?",new
                 String[]{fugitive.getName()});
         close();
