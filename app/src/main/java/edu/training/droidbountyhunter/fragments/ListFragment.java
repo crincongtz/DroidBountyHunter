@@ -9,14 +9,17 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 
 import edu.training.droidbountyhunter.DetailActivity;
 import edu.training.droidbountyhunter.R;
 import edu.training.droidbountyhunter.data.DatabaseBountyHunter;
+import edu.training.droidbountyhunter.interfaces.OnTaskListener;
 import edu.training.droidbountyhunter.models.Fugitive;
+import edu.training.droidbountyhunter.network.JSONUtils;
+import edu.training.droidbountyhunter.network.NetServices;
 
 public class ListFragment extends Fragment {
 
@@ -52,18 +55,37 @@ public class ListFragment extends Fragment {
         return view;
     }
 
-    private void UpdateList(ListView list, int mode){
+    private void UpdateList(final ListView list, final int mode) {
         DatabaseBountyHunter database = new DatabaseBountyHunter(getContext());
         ArrayList<Fugitive> fugitives = database.GetFugitives(mode == 1);
-        if (fugitives.size() > 0){
+        if (fugitives.size() > 0) {
             String[] data = new String[fugitives.size()];
-            for (int i = 0 ; i < fugitives.size() ; i++){
+            for (int i = 0; i < fugitives.size(); i++) {
                 data[i] = fugitives.get(i).getName();
             }
             ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(),
                     android.R.layout.simple_list_item_1, data);
             list.setAdapter(adapter);
             list.setTag(fugitives);
+        } else { // La base de datos se encuentra vacía
+            if (mode == 0) {
+                NetServices apiCall = new NetServices(new OnTaskListener() {
+                    @Override
+                    public void OnTaskCompleted(String response) {
+                        JSONUtils.parseFugitives(response, getContext());
+                        UpdateList(list, mode);
+                    }
+
+                    @Override
+                    public void OnTaskError(int code, String message) {
+                        Toast.makeText(getContext(),
+                                "Ocurrio un problema con el WebService!!!" + " --- Código de error: " +
+                                        code + "\nMensaje: " + message, Toast.LENGTH_LONG).show();
+                    }
+                });
+                apiCall.execute("Fugitives");
+            }
         }
     }
+
 }
