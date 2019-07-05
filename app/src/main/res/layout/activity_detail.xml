@@ -50,4 +50,11 @@
         android:text="@string/button_picture"
         android:onClick="OnPhotoClick"/>
 
+    <Button
+        android:id="@+id/buttonMaps"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/button_maps"
+        android:onClick="OnMapClick"/>
+
 </LinearLayout>
