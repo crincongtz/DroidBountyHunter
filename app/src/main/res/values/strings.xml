@@ -1,8 +1,8 @@
-
 <resources>
     <string name="app_name">DroidBountyHunter</string>
     <string name="title_activity_add">New Fugitive</string>
     <string name="title_activity_detail">Fugitive Detail</string>
+    <string name="title_activity_maps">Map</string>
 
     <string name="tab_text_1">Section 1</string>
     <string name="tab_text_2">Section 2</string>
@@ -17,7 +17,7 @@
     <string name="button_save">Save</string>
     <string name="button_capture">Capture</string>
     <string name="button_delete">Delete</string>
+    <string name="button_maps">Open maps</string>
     <string name="field_name">Fugitive Name</string>
     <string name="button_picture">Take Picture</string>
-
 </resources>
