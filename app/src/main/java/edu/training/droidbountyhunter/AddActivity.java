@@ -1,7 +1,7 @@
 package edu.training.droidbountyhunter;
 
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity;
 
 public class AddActivity extends AppCompatActivity {
 
