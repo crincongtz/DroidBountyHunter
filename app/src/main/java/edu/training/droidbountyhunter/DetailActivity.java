@@ -6,13 +6,12 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Looper;
 import android.provider.MediaStore;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,6 +24,14 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import org.json.JSONException;
 import org.json.JSONObject;
 import edu.training.droidbountyhunter.data.DatabaseBountyHunter;
@@ -32,10 +39,9 @@ import edu.training.droidbountyhunter.interfaces.OnTaskListener;
 import edu.training.droidbountyhunter.models.Fugitive;
 import edu.training.droidbountyhunter.network.NetServices;
 import edu.training.droidbountyhunter.utilities.PictureTools;
-
 import static edu.training.droidbountyhunter.utilities.PictureTools.MEDIA_TYPE_IMAGE;
 
-public class DetailActivity extends AppCompatActivity implements LocationListener {
+public class DetailActivity extends AppCompatActivity {
 
     private Fugitive fugitive;
     private Button buttonCapture;
@@ -50,6 +56,10 @@ public class DetailActivity extends AppCompatActivity implements LocationListene
     private static final int REQUEST_CODE_GPS = 1234;
     private LocationManager locationManager;
 
+    private FusedLocationProviderClient fusedLocationClient = null;
+    private LocationRequest locationRequest = null;
+    private LocationCallback locationCallback = null;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -60,6 +70,9 @@ public class DetailActivity extends AppCompatActivity implements LocationListene
         mode = bundleExtras.getInt("mode");
         this.setTitle(fugitive.getName() + " - Id: " + fugitive.getId());
         setContentView(R.layout.activity_detail);
+
+        setupLocationObjects();
+
         TextView label = findViewById(R.id.labelMessage);
         buttonCapture = findViewById(R.id.buttonCapture);
         buttonDelete = (Button)findViewById(R.id.buttonDelete);
@@ -79,6 +92,29 @@ public class DetailActivity extends AppCompatActivity implements LocationListene
             }
 
         }
+    }
+
+    private void setupLocationObjects() {
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        locationRequest = new LocationRequest()
+                .setInterval(10000)
+                .setFastestInterval(5000)
+                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+        locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (locationResult.getLastLocation() != null) {
+                    Location location = locationResult.getLastLocation();
+                    Log.d("LocationCallback", "onLocationResult: " + location);
+                    fugitive.setLatitude(location.getLatitude());
+                    fugitive.setLongitude(location.getLongitude());
+                } else {
+                    Log.d("LocationCallback", "Location missing in callback.");
+                }
+            }
+        };
     }
 
     public void OnCaptureClick(View view) {
@@ -138,7 +174,6 @@ public class DetailActivity extends AppCompatActivity implements LocationListene
         startActivity(intent);
     }
 
-
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == PictureTools.REQUEST_CODE) {
@@ -194,58 +229,45 @@ public class DetailActivity extends AppCompatActivity implements LocationListene
         }
     }
 
-    @Override
-    public void onLocationChanged(Location location) {
-        fugitive.setLatitude(location.getLatitude());
-        fugitive.setLongitude(location.getLongitude());
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
-    }
-
     @SuppressLint("MissingPermission")
     private void turnOnGPS(){
         if (isGPSActivated()){
-            locationManager = (LocationManager)getSystemService(LOCATION_SERVICE);
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,0,0,this);
-            Toast.makeText(this,"Activando GPS...",Toast.LENGTH_LONG).show();
 
-            Criteria criteria = new Criteria();
-            criteria.setAccuracy(Criteria.ACCURACY_FINE);
+            fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper());
 
-            // BestProvider
-            String provider = locationManager.getBestProvider(criteria, true);
+            Toast.makeText(this, "Activando GPS...", Toast.LENGTH_LONG).show();
             // Getting last location available
-            Location location = locationManager.getLastKnownLocation(provider);
-            if (location != null){
-                fugitive.setLatitude(location.getLatitude());
-                fugitive.setLongitude(location.getLongitude());
-            }
+            fusedLocationClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    // Got last known location. In some rare situations this can be null.
+                    Log.d("CursoKotlin", "Last Known Location: " + location);
+                    if (location != null) {
+                        fugitive.setLatitude(location.getLatitude());
+                        fugitive.setLongitude(location.getLongitude());
+                    }
+                }
+            });
         }
     }
 
     private void turnOffGPS(){
-        Log.e("CALIS", "turnOffGPS()");
-        if (locationManager != null){
-            try {
-                locationManager.removeUpdates(this);
-                Toast.makeText(this,"Desactivando GPS...",Toast.LENGTH_LONG).show();
-            }catch (SecurityException e){
-                Toast.makeText(this,"Error desactivando GPS " + e.toString(),
-                        Toast.LENGTH_LONG).show();
-            }
+        try {
+            Toast.makeText(this,"Desactivando GPS...",Toast.LENGTH_LONG).show();
+
+            fusedLocationClient.removeLocationUpdates(locationCallback).addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    if (task.isSuccessful()) {
+                        Log.d("LocationRequest", "Location Callback removed.");
+                    } else {
+                        Log.d("LocationRequest", "Failed to remove Location Callback.");
+                    }
+                }
+            });
+        } catch (SecurityException e){
+            Toast.makeText(this,"Error desactivando GPS " + e.toString(),
+                    Toast.LENGTH_LONG).show();
         }
     }
 
