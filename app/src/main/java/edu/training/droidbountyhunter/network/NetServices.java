@@ -21,8 +21,8 @@ public class NetServices extends AsyncTask<String, Void, Boolean> {
 
     private static final String LOG_TAG = NetServices.class.getSimpleName();
 
-    private static final String endpoint_fugitives = "http://201.168.207.210/services/droidBHServices.svc/fugitivos";
-    private static final String endpoint_captured = "http://201.168.207.210/services/droidBHServices.svc/atrapados";
+    private static final String endpoint_fugitives = "http://3.13.226.218/droidBHServices.svc/fugitivos";
+    private static final String endpoint_captured = "http://3.13.226.218/droidBHServices.svc/atrapados";
     private OnTaskListener listener;
     private String JSONString;
     private boolean isFugitives = true;
